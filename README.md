@@ -2,6 +2,18 @@
 
 An application launcher for KDE Plasma 6 with drag-and-drop folders, configurable favourites, and a compact system information panel.
 
+<p>
+  <img src="docs/screenshots/launcher.png" alt="Menu 11 Next Level with favourite folders, system information and a circular user profile picture" width="560">
+</p>
+
+## Screenshots
+
+| Open folder | Rename a folder |
+| --- | --- |
+| ![Open Proton Apps folder showing three apps and a rename button](docs/screenshots/folder.png) | ![Rename folder dialog with separate Save and Cancel buttons](docs/screenshots/rename-folder.png) |
+
+Screenshots captured from the app running on Fedora KDE.
+
 ## Features
 
 - Launch apps from your favourites, folders, search results, or the All Apps page.

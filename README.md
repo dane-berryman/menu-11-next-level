@@ -1,4 +1,62 @@
-# Menu 11 Next
+# Menu 11 Next Level
+
+A personal fork of Menu 11 Next with folders inside the pinned application grid.
+It installs as **Menu 11 Next Level** alongside existing launchers.
+
+## Pinned folders
+
+- Drag an app onto the **centre** of another pinned app, then release to create a folder.
+- Drop an app on a folder to add it. A highlight ring shows the grouping target.
+- Drop near the **left or right edge** of a tile to reorder. A line shows the insertion point.
+- Click a folder to open it. Use the rename button beside its larger title to edit the name, then Save or Cancel.
+- Drag an app out of an open folder onto empty pinned-grid space or a tile edge to move it out.
+- You can also right-click an app inside a folder and choose **Move out of folder**.
+- Right-click a folder and choose **Dissolve folder** to return its apps to the grid.
+- The folder button creates an empty folder that you can name and fill by dragging apps.
+
+Folders and tile order are saved per widget. Grouping does not remove applications
+from KDE's underlying favorites. Existing folder data is migrated on use.
+Keyboard navigation, pagination, and Ctrl+1–9 follow the visible grid, including folders.
+
+## Personalisation and system information
+
+In **Configure → General**:
+
+- Sort favourites manually, A–Z, folders first, or folders last (A–Z within each type).
+  Dropping between tiles switches back to manual order.
+- Set the circular profile picture size from 24 to 96 pixels.
+- Show or hide the local IP address, home-filesystem disk space, and RAM usage separately.
+  Readings refresh every five seconds while the menu is open; no network requests are made.
+
+Click the profile area to open **System Settings → Users**. The greeting and recent
+documents section have been removed. Normal clicks launch apps both in the pinned
+grid and inside folders, including when the grid is sorted.
+
+## Install
+
+```sh
+kpackagetool6 --type Plasma/Applet --install .
+```
+
+Then add **Menu 11 Next Level** from Plasma's widget list. To switch your panel launcher,
+right-click its icon and select **Show Alternatives**.
+
+## Validation
+
+The interaction tests use PySide6 and the system KDE QML modules:
+
+```sh
+QT_QPA_PLATFORM=offscreen python3 tests/test_pinned_grid.py
+```
+
+They exercise mouse drags, grouping, adding to folders, edge reordering, cancelled
+drags, moving out, dissolving, keyboard opening, renaming and legacy-data validation.
+
+---
+
+## Upstream documentation
+
+### Menu 11 Next
 
 ## Windows 11 menu launcher for KDE Plasma 6.5
 Based on [menu 11 plasma6,](https://github.com/adhec/OnzeMenuKDE), with some tweaks & modifications to make it fully working with the most recent kde plasma.

@@ -69,21 +69,6 @@ PlasmaCore.Dialog {
         }
     }
 
-    property int docsIconSize: {
-        switch (Plasmoid.configuration.docsIconSize) {
-        case 0:
-            return Kirigami.Units.iconSizes.smallMedium;
-        case 1:
-            return Kirigami.Units.iconSizes.medium;
-        case 2:
-            return Kirigami.Units.iconSizes.large;
-        case 3:
-            return Kirigami.Units.iconSizes.huge;
-        default:
-            return Kirigami.Units.iconSizes.medium;
-        }
-    }
-
     property int cellSizeHeight: iconSize + Kirigami.Units.gridUnit * 2 + (2 * Math.max(highlightItemSvg.margins.top + highlightItemSvg.margins.bottom, highlightItemSvg.margins.left + highlightItemSvg.margins.right))
     property int cellSizeWidth: cellSizeHeight + Kirigami.Units.gridUnit
 
@@ -114,7 +99,7 @@ PlasmaCore.Dialog {
             }
             // Trigger periodic background update check (throttled to once per 24 hours)
             if (UpdateChecker.shouldCheckForUpdates(Plasmoid.configuration)) {
-                UpdateChecker.checkForUpdates("1.3", function(result) {
+                UpdateChecker.checkForUpdates("1.4.1", function(result) {
                     if (result.success) {
                         UpdateChecker.recordLastCheckTime(Plasmoid.configuration);
                         if (result.updateAvailable) {
@@ -155,13 +140,10 @@ PlasmaCore.Dialog {
         searchField.focus = true;
         view.currentIndex = 0;
         globalFavoritesGrid.currentIndex = -1;
-        documentsGrid.currentIndex = -1;
         allAppsGrid.currentIndex = -1;
         rootItem.pinnedCurrentPage = 0;
         kicker.searchRunnerFilter = "all";
-        folderContentPopup.visible = false;
-        createFolderOverlay.visible = false;
-        folderRenameOverlay.visible = false;
+        globalFavoritesGrid.closeFolder();
         allAppsFolderPopup.visible = false;
         createAllAppsFolderOverlay.visible = false;
     }
@@ -252,15 +234,6 @@ PlasmaCore.Dialog {
         focus: true
         onFocusChanged: searchField.focus = true
 
-        KCoreAddons.KUser { id: menuUser }
-
-        property string timeGreeting: {
-            var h = new Date().getHours();
-            if (h < 12) return i18n("Good morning");
-            if (h < 18) return i18n("Good afternoon");
-            return i18n("Good evening");
-        }
-
         // ── Pinned Folders ──────────────────────────────────────────────────
         property var pinnedFoldersData: []
 
@@ -288,12 +261,13 @@ PlasmaCore.Dialog {
         }
 
         function launchFolderApp(desktopId) {
-            var favList = globalFavorites.favorites;
-            for (var i = 0; i < favList.length; i++) {
-                if (favList[i] === desktopId) {
-                    rootItem.recordLaunch(desktopId);
-                    globalFavorites.trigger(i, "", null);
-                    root.toggle();
+            // The favorites list can contain aliases; launch by the actual model row/role.
+            for (var i = 0; i < globalFavorites.count; i++) {
+                if (String(globalFavorites.data(globalFavorites.index(i, 0), kickerFavoriteIdRole)) === desktopId) {
+                    if (globalFavorites.trigger(i, "", null)) {
+                        rootItem.recordLaunch(desktopId);
+                        root.visible = false;
+                    }
                     return;
                 }
             }
@@ -896,25 +870,14 @@ PlasmaCore.Dialog {
             }
             onCurrentIndexChanged: {
                 globalFavoritesGrid.currentIndex = -1;
-                documentsGrid.currentIndex = -1;
             }
 
             width: rootItem.widthComputed / 0.1
-            height: (root.cellSizeHeight * Plasmoid.configuration.numberRows)
-                  + (topRow.height * 2)
-                  + ((docsIconSize + Kirigami.Units.largeSpacing) * 5)
-                  + (3 * Kirigami.Units.largeSpacing)
-                  + Kirigami.Units.gridUnit
-                  + Kirigami.Units.largeSpacing * 2
-                  + (Plasmoid.configuration.showRecentApps
-                     ? Kirigami.Units.iconSizes.medium + Kirigami.Units.largeSpacing * 3
-                     : 0)
-                  + (rootItem.pinnedFoldersData.length > 0
-                     ? (Math.ceil(rootItem.pinnedFoldersData.length / Math.max(1, Plasmoid.configuration.numberColumns)) * root.cellSizeHeight + Kirigami.Units.largeSpacing * 2)
-                     : 0)
+            height: Math.max(320, homePage.implicitHeight)
 
             // PAGE 1
             Column {
+                id: homePage
                 width: rootItem.widthComputed
                 spacing: Kirigami.Units.largeSpacing * 2
                 function tryActivate(row, col) {
@@ -924,30 +887,6 @@ PlasmaCore.Dialog {
                 RowLayout {
                     id: topRow
                     width: parent.width
-
-                    Column {
-                        spacing: 0
-                        Layout.alignment: Qt.AlignVCenter
-
-                        PlasmaExtras.Heading {
-                            id: headLabelGreeting
-                            color: colorWithAlpha(Kirigami.Theme.textColor, 0.9)
-                            level: 5
-                            font.weight: Font.Bold
-                            text: {
-                                var first = menuUser.fullName.split(" ")[0];
-                                return first.length > 0
-                                    ? rootItem.timeGreeting + ", " + first
-                                    : rootItem.timeGreeting;
-                            }
-                        }
-
-                        Text {
-                            text: i18n("Pinned")
-                            color: colorWithAlpha(Kirigami.Theme.textColor, 0.45)
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.8
-                        }
-                    }
 
                     Item {
                         Layout.fillWidth: true
@@ -960,9 +899,7 @@ PlasmaCore.Dialog {
                         PC3.ToolTip.visible: hovered
                         PC3.ToolTip.delay: 500
                         onClicked: {
-                            newFolderNameField.text = "";
-                            appPickerListView.checkedIds = [];
-                            createFolderOverlay.visible = true;
+                            globalFavoritesGrid.createEmptyFolder();
                         }
                     }
 
@@ -978,13 +915,27 @@ PlasmaCore.Dialog {
                     }
                 }
 
-                ItemGridView {
+                PinnedGrid {
                     id: globalFavoritesGrid
+                    columns: Plasmoid.configuration.numberColumns
+                    rows: Plasmoid.configuration.numberRows
+                    page: rootItem.pinnedCurrentPage
+                    folders: rootItem.pinnedFoldersData
+                    order: parseOrder(Plasmoid.configuration.pinnedOrder)
+                    sortMode: Plasmoid.configuration.pinnedSortMode
+                    onManualOrderRequested: Plasmoid.configuration.pinnedSortMode = 0
+                    externalDragSource: kicker.dragSource
+                    onFoldersEdited: value => {
+                        rootItem.pinnedFoldersData = value;
+                        rootItem.saveFolders();
+                    }
+                    onOrderEdited: value => Plasmoid.configuration.pinnedOrder = JSON.stringify(value)
+                    onAppActivated: favoriteId => {
+                        rootItem.recordLaunch(favoriteId);
+                        root.visible = false;
+                    }
                     width: parent.width
                     height: root.cellSizeHeight * Plasmoid.configuration.numberRows
-                    itemColumns: 1
-                    dragEnabled: true
-                    dropEnabled: true
                     cellWidth: parent.width / Plasmoid.configuration.numberColumns
                     cellHeight: root.cellSizeHeight
                     iconSize: root.iconSize
@@ -1003,7 +954,7 @@ PlasmaCore.Dialog {
                             globalFavoritesGrid.tryActivate(0, 0);
                         } else {
                             globalFavoritesGrid.focus = false;
-                            documentsGrid.tryActivate(0, 0);
+                            footerContent.forceActiveFocus();
                         }
                     }
                     onKeyNavLeft: {
@@ -1018,32 +969,12 @@ PlasmaCore.Dialog {
                             globalFavoritesGrid.tryActivate(0, 0);
                         }
                     }
-                    Keys.onPressed: event => {
-                        if (event.key === Qt.Key_Tab) {
-                            event.accepted = true;
-                            searchField.focus = true;
-                            globalFavoritesGrid.focus = false;
-                        } else if (event.key === Qt.Key_PageDown) {
-                            event.accepted = true;
-                            if (rootItem.pinnedCurrentPage < rootItem.pinnedTotalPages - 1) {
-                                rootItem.pinnedCurrentPage++;
-                                globalFavoritesGrid.tryActivate(0, 0);
-                            }
-                        } else if (event.key === Qt.Key_PageUp) {
-                            event.accepted = true;
-                            if (rootItem.pinnedCurrentPage > 0) {
-                                rootItem.pinnedCurrentPage--;
-                                globalFavoritesGrid.tryActivate(0, 0);
-                            }
-                        } else if (event.key === Qt.Key_Home) {
-                            event.accepted = true;
-                            rootItem.pinnedCurrentPage = 0;
-                            globalFavoritesGrid.tryActivate(0, 0);
-                        } else if (event.key === Qt.Key_End) {
-                            event.accepted = true;
-                            rootItem.pinnedCurrentPage = rootItem.pinnedTotalPages - 1;
-                            globalFavoritesGrid.tryActivate(0, 0);
-                        }
+                    onTabRequested: {
+                        searchField.forceActiveFocus();
+                    }
+                    onPageRequested: requestedPage => {
+                        rootItem.pinnedCurrentPage = requestedPage;
+                        globalFavoritesGrid.tryActivate(0, 0);
                     }
                 }
 
@@ -1091,167 +1022,6 @@ PlasmaCore.Dialog {
                     }
                 }
 
-                // ── Pinned Folders strip ────────────────────────────────────────
-                Flow {
-                    id: folderStrip
-                    width: parent.width
-                    spacing: Kirigami.Units.smallSpacing
-                    visible: rootItem.pinnedFoldersData.length > 0
-
-                    Repeater {
-                        id: folderTilesRepeater
-                        model: rootItem.pinnedFoldersData
-
-                        delegate: Item {
-                            id: folderTile
-                            width: root.cellSizeWidth
-                            height: root.cellSizeHeight
-
-                            property var fd: rootItem.pinnedFoldersData[index] || {name:"", items:[]}
-
-                            focus: true
-                            activeFocusOnTab: true
-                            Accessible.role: Accessible.Button
-                            Accessible.name: fd.name
-
-                            Keys.onReturnPressed: {
-                                var pos = mapToItem(rootItem, 0, 0);
-                                folderContentPopup.showAt(index, pos.x, pos.y, width, height);
-                            }
-                            Keys.onSpacePressed: Keys.onReturnPressed
-
-                            // Hover/focus background
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: Kirigami.Units.smallSpacing / 2
-                                radius: Kirigami.Units.smallSpacing + 2
-                                color: Kirigami.Theme.highlightColor
-                                opacity: tileHover.containsMouse ? 0.12 : 0.0
-                                Behavior on opacity { NumberAnimation { duration: 100 } }
-                            }
-
-                            // Keyboard focus ring
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: 1
-                                radius: Kirigami.Units.smallSpacing + 3
-                                color: "transparent"
-                                border.width: folderTile.activeFocus ? 2 : 0
-                                border.color: Kirigami.Theme.highlightColor
-                                opacity: 0.75
-                                Behavior on border.width { NumberAnimation { duration: 80 } }
-                            }
-
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: Kirigami.Units.smallSpacing
-
-                                // Icon mosaic
-                                Item {
-                                    id: mosaicBox
-                                    width: Kirigami.Units.iconSizes.medium
-                                    height: Kirigami.Units.iconSizes.medium
-                                    anchors.horizontalCenter: parent.horizontalCenter
-
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: Kirigami.Units.smallSpacing
-                                        color: root.colorWithAlpha(Kirigami.Theme.highlightColor, 0.15)
-                                        border.width: 1
-                                        border.color: root.colorWithAlpha(Kirigami.Theme.highlightColor, 0.35)
-                                    }
-
-                                    Grid {
-                                        anchors.centerIn: parent
-                                        columns: 2
-                                        spacing: 2
-
-                                        Repeater {
-                                            model: Math.min(4, folderTile.fd.items.length)
-                                            delegate: Kirigami.Icon {
-                                                width: (mosaicBox.width - 10) / 2
-                                                height: width
-                                                source: rootItem.iconForId(folderTile.fd.items[index])
-                                                animated: false
-                                            }
-                                        }
-                                    }
-
-                                    // Empty folder icon
-                                    Kirigami.Icon {
-                                        visible: folderTile.fd.items.length === 0
-                                        anchors.centerIn: parent
-                                        source: "folder"
-                                        width: Kirigami.Units.iconSizes.small
-                                        height: width
-                                        animated: false
-                                    }
-                                }
-
-                                // Folder name
-                                Text {
-                                    width: root.cellSizeWidth - Kirigami.Units.largeSpacing * 2
-                                    text: folderTile.fd.name
-                                    color: Kirigami.Theme.textColor
-                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.85
-                                    horizontalAlignment: Text.AlignHCenter
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 1
-                                }
-                            }
-
-                            MouseArea {
-                                id: tileHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-                                onClicked: mouse => {
-                                    if (mouse.button === Qt.RightButton) {
-                                        folderContextMenu.targetIndex = index;
-                                        folderContextMenu.popup();
-                                    } else {
-                                        var pos = mapToItem(rootItem, 0, 0);
-                                        folderContentPopup.showAt(index, pos.x, pos.y, width, height);
-                                    }
-                                }
-                            }
-
-                            // Drag-to-folder drop target
-                            DropArea {
-                                id: folderDropTarget
-                                anchors.fill: parent
-
-                                onDropped: {
-                                    var src = kicker.dragSource;
-                                    if (!src || !src.favoriteId || src.favoriteId === "") return;
-                                    var favId = src.favoriteId;
-                                    var folders = rootItem.pinnedFoldersData.slice();
-                                    var folder = folders[index];
-                                    if (!folder || folder.items.indexOf(favId) >= 0) return;
-                                    folders[index] = { name: folder.name, items: folder.items.concat([favId]) };
-                                    rootItem.pinnedFoldersData = folders;
-                                    rootItem.saveFolders();
-                                }
-
-                                // Drop-hover highlight ring
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: 1
-                                    radius: Kirigami.Units.smallSpacing + 3
-                                    color: root.colorWithAlpha(Kirigami.Theme.highlightColor, 0.22)
-                                    border.width: 2
-                                    border.color: Kirigami.Theme.highlightColor
-                                    visible: folderDropTarget.containsDrag
-                                             && typeof kicker.dragSource !== "undefined"
-                                             && kicker.dragSource !== null
-                                }
-                            }
-                        }
-                    }
-                }
-
                 // ── Weather Card ────────────────────────────────────────────────
                 CustomUI.WeatherCard {
                     id: weatherCard
@@ -1268,9 +1038,7 @@ PlasmaCore.Dialog {
                         : 0
 
                     height: recentAppsStripHeight
-                          + butttonActionAllApps.implicitHeight
-                          + Kirigami.Units.largeSpacing * 2
-                          + (docsIconSize + Kirigami.Units.largeSpacing * 2) * 3
+                    visible: height > 0
 
                     // Recently opened apps — horizontal icon strip
                     Item {
@@ -1372,75 +1140,15 @@ PlasmaCore.Dialog {
                         }
                     }
 
-                    RowLayout {
-                        id: docsHeaderRow
-                        width: parent.width
-                        height: butttonActionAllApps.implicitHeight
-                        y: docsContainer.recentAppsStripHeight
-                        opacity: Plasmoid.configuration.showRecentDocs ? 1.0 : 0.0
-                        enabled: Plasmoid.configuration.showRecentDocs
+                }
 
-                        Kirigami.Icon {
-                            source: 'tag-recents'
-                            implicitHeight: Kirigami.Units.iconSizes.smallMedium
-                            implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                        }
-
-                        PlasmaExtras.Heading {
-                            color: colorWithAlpha(Kirigami.Theme.textColor, 0.8)
-                            level: 5
-                            text: i18n("Recent documents")
-                            Layout.leftMargin: Kirigami.Units.smallSpacing
-                            font.weight: Font.Bold
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        AToolButton {
-                            id: butttonActionRecentMore
-                            flat: false
-                            iconName: "go-next"
-                            text: i18n("Show more")
-                            buttonHeight: 25
-                            onClicked: {
-                                executable.checkDolphin();
-                                if (executable.dolphinRunning) {
-                                    executable.exec("dolphin 'recentlyused:/files/'");
-                                } else {
-                                    executable.exec("dolphin --new-window 'recentlyused:/files/'");
-                                }
-                                root.toggle();
-                            }
-                        }
-                    }
-
-                    ItemGridView {
-                        id: documentsGrid
-                        y: docsContainer.recentAppsStripHeight + butttonActionAllApps.implicitHeight + Kirigami.Units.largeSpacing * 2
-                        width: rootItem.widthComputed
-                        height: (docsIconSize + Kirigami.Units.largeSpacing * 2) * 3
-                        itemColumns: 2
-                        dragEnabled: true
-                        dropEnabled: true
-                        cellWidth: rootItem.widthComputed * 0.48
-                        cellHeight: docsIconSize + Kirigami.Units.largeSpacing * 2
-                        iconSize: docsIconSize
-                        clip: true
-                        visible: Plasmoid.configuration.showRecentDocs
-                        onKeyNavUp: {
-                            globalFavoritesGrid.tryActivate(0, 0);
-                            documentsGrid.focus = false;
-                        }
-                        Keys.onPressed: event => {
-                            if (event.key === Qt.Key_Tab) {
-                                event.accepted = true;
-                                documentsGrid.focus = false;
-                                footerContent.forceActiveFocus();
-                            }
-                        }
-                    }
+                SystemInfoCard {
+                    id: systemInfoCard
+                    width: parent.width
+                    active: root.visible
+                    showIpAddress: Plasmoid.configuration.showIpAddress
+                    showDiskSpace: Plasmoid.configuration.showDiskSpace
+                    showRamUsage: Plasmoid.configuration.showRamUsage
                 }
             }
             // PAGE 2
@@ -1498,7 +1206,7 @@ PlasmaCore.Dialog {
                     AToolButton {
                         flat: false
                         iconName: 'go-previous'
-                        text: i18n("Pinned")
+                        text: i18n("Back")
                         buttonHeight: 25
                         onClicked: view.currentIndex = 0
                     }
@@ -2077,7 +1785,7 @@ PlasmaCore.Dialog {
         PlasmaExtras.PlasmoidHeading {
             id: footer
             contentWidth: parent.width
-            contentHeight: Kirigami.Units.gridUnit * 3
+            contentHeight: Math.max(Kirigami.Units.gridUnit * 3, Plasmoid.configuration.profilePictureSize + Kirigami.Units.smallSpacing * 2)
             anchors.bottom: parent.bottom
             position: PC3.ToolBar.Footer
 
@@ -2155,417 +1863,6 @@ PlasmaCore.Dialog {
                 var p = allAppsGrid.mapToItem(rootItem, allAppsGrid.width * 0.55,
                                               itemY + allAppsGrid.cellHeight)
                 rootItem.openFolderAppPicker(entry.folderIdx, p.x, p.y)
-            }
-        }
-
-        // ── Folder content popup ─────────────────────────────────────────────
-        // Click-outside dismiss layer
-        MouseArea {
-            id: folderPopupDismiss
-            anchors.fill: parent
-            z: 198
-            visible: folderContentPopup.visible
-            onClicked: folderContentPopup.visible = false
-        }
-
-        Item {
-            id: folderContentPopup
-            visible: false
-            z: 200
-            width: 240
-            height: popupBg.height
-
-            function showAt(idx, tileX, tileY, tileW, tileH) {
-                folderContentPopup.property_folderIndex = idx;
-                var h = popupBg.height;
-                x = Math.max(0, Math.min(tileX, rootItem.width - width));
-                y = tileY - h - Kirigami.Units.smallSpacing;
-                if (y < 0) y = tileY + tileH + Kirigami.Units.smallSpacing;
-                visible = true;
-            }
-
-            property int property_folderIndex: -1
-
-            Rectangle {
-                id: popupBg
-                width: parent.width
-                height: popupColumn.implicitHeight + Kirigami.Units.largeSpacing * 2
-                radius: Kirigami.Units.smallSpacing * 2
-                color: Kirigami.Theme.backgroundColor
-                border.width: 1
-                border.color: root.colorWithAlpha(Kirigami.Theme.textColor, 0.15)
-
-                Column {
-                    id: popupColumn
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: Kirigami.Units.smallSpacing
-                    spacing: 2
-
-                    Text {
-                        leftPadding: Kirigami.Units.smallSpacing
-                        text: folderContentPopup.property_folderIndex >= 0 && folderContentPopup.property_folderIndex < rootItem.pinnedFoldersData.length
-                              ? rootItem.pinnedFoldersData[folderContentPopup.property_folderIndex].name
-                              : ""
-                        font.bold: true
-                        color: Kirigami.Theme.textColor
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.9
-                    }
-
-                    Repeater {
-                        model: folderContentPopup.property_folderIndex >= 0 && folderContentPopup.property_folderIndex < rootItem.pinnedFoldersData.length
-                               ? rootItem.pinnedFoldersData[folderContentPopup.property_folderIndex].items
-                               : []
-
-                        delegate: Item {
-                            width: folderContentPopup.width - Kirigami.Units.smallSpacing * 2
-                            height: Kirigami.Units.gridUnit * 2.5
-
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: 2
-                                radius: Kirigami.Units.smallSpacing
-                                color: appEntryHover.containsMouse
-                                       ? root.colorWithAlpha(Kirigami.Theme.highlightColor, 0.12)
-                                       : "transparent"
-                                Behavior on color { ColorAnimation { duration: 80 } }
-                            }
-
-                            Row {
-                                anchors.left: parent.left
-                                anchors.leftMargin: Kirigami.Units.smallSpacing * 2
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: Kirigami.Units.smallSpacing
-
-                                Kirigami.Icon {
-                                    source: rootItem.iconForId(modelData)
-                                    width: Kirigami.Units.iconSizes.small
-                                    height: width
-                                    animated: false
-                                }
-
-                                Text {
-                                    text: rootItem.displayNameForId(modelData)
-                                    color: Kirigami.Theme.textColor
-                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.9
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                            }
-
-                            MouseArea {
-                                id: appEntryHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    folderContentPopup.visible = false;
-                                    rootItem.launchFolderApp(modelData);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Create-folder overlay ────────────────────────────────────────────
-        Item {
-            id: createFolderOverlay
-            anchors.fill: parent
-            visible: false
-            z: 202
-
-            // Dim background
-            Rectangle {
-                anchors.fill: parent
-                color: "black"
-                opacity: 0.45
-                MouseArea { anchors.fill: parent; onClicked: createFolderOverlay.visible = false }
-            }
-
-            // Dialog card
-            Rectangle {
-                id: createDialog
-                width: Math.min(340, rootItem.width - Kirigami.Units.largeSpacing * 4)
-                height: dialogCol.implicitHeight + Kirigami.Units.largeSpacing * 2
-                anchors.centerIn: parent
-                radius: Kirigami.Units.smallSpacing * 2
-                color: Kirigami.Theme.backgroundColor
-                border.width: 1
-                border.color: root.colorWithAlpha(Kirigami.Theme.textColor, 0.15)
-
-                Column {
-                    id: dialogCol
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: Kirigami.Units.largeSpacing
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Text {
-                        text: i18n("New Folder")
-                        color: Kirigami.Theme.textColor
-                        font.bold: true
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
-                    }
-
-                    PC3.TextField {
-                        id: newFolderNameField
-                        width: parent.width
-                        placeholderText: i18n("Folder name")
-                    }
-
-                    Text {
-                        text: i18n("Choose apps from Pinned:")
-                        color: root.colorWithAlpha(Kirigami.Theme.textColor, 0.7)
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.85
-                        topPadding: Kirigami.Units.smallSpacing
-                    }
-
-                    // App picker list
-                    Rectangle {
-                        width: parent.width
-                        height: 160
-                        radius: Kirigami.Units.smallSpacing
-                        color: root.colorWithAlpha(Kirigami.Theme.textColor, 0.05)
-                        clip: true
-
-                        ListView {
-                            id: appPickerListView
-                            anchors.fill: parent
-                            anchors.margins: 4
-                            model: globalFavorites
-                            clip: true
-
-                            property var checkedIds: []
-
-                            delegate: Item {
-                                width: appPickerListView.width
-                                height: Kirigami.Units.gridUnit * 2.5
-
-                                property string favId: model.favoriteId !== undefined ? model.favoriteId : ""
-                                property bool isChecked: appPickerListView.checkedIds.indexOf(favId) >= 0
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: 1
-                                    radius: Kirigami.Units.smallSpacing
-                                    color: pickHover.containsMouse
-                                           ? root.colorWithAlpha(Kirigami.Theme.highlightColor, 0.08)
-                                           : "transparent"
-                                }
-
-                                Row {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: Kirigami.Units.smallSpacing
-                                    anchors.rightMargin: Kirigami.Units.smallSpacing
-                                    spacing: Kirigami.Units.smallSpacing
-
-                                    CheckBox {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        checked: isChecked
-                                        onToggled: {
-                                            if (!favId) return;
-                                            var arr = appPickerListView.checkedIds.slice();
-                                            var idx = arr.indexOf(favId);
-                                            if (checked && idx < 0) arr.push(favId);
-                                            else if (!checked && idx >= 0) arr.splice(idx, 1);
-                                            appPickerListView.checkedIds = arr;
-                                        }
-                                    }
-
-                                    Kirigami.Icon {
-                                        source: model.decoration !== undefined ? model.decoration : ""
-                                        width: Kirigami.Units.iconSizes.small
-                                        height: width
-                                        animated: false
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-
-                                    Text {
-                                        text: model.display !== undefined ? model.display : ""
-                                        color: Kirigami.Theme.textColor
-                                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.9
-                                        elide: Text.ElideRight
-                                        width: appPickerListView.width - Kirigami.Units.iconSizes.small
-                                               - Kirigami.Units.gridUnit * 2 - Kirigami.Units.smallSpacing * 3
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: pickHover
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        if (!favId) return;
-                                        var arr = appPickerListView.checkedIds.slice();
-                                        var idx = arr.indexOf(favId);
-                                        if (idx >= 0) arr.splice(idx, 1);
-                                        else arr.push(favId);
-                                        appPickerListView.checkedIds = arr;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Action buttons
-                    RowLayout {
-                        width: parent.width
-
-                        Item { Layout.fillWidth: true }
-
-                        PC3.Button {
-                            text: i18n("Cancel")
-                            onClicked: createFolderOverlay.visible = false
-                        }
-
-                        PC3.Button {
-                            text: i18n("Create")
-                            highlighted: true
-                            enabled: newFolderNameField.text.trim().length > 0
-                                  && appPickerListView.checkedIds.length > 0
-                            onClicked: {
-                                var folders = rootItem.pinnedFoldersData.slice();
-                                folders.push({
-                                    name: newFolderNameField.text.trim(),
-                                    items: appPickerListView.checkedIds.slice()
-                                });
-                                rootItem.pinnedFoldersData = folders;
-                                rootItem.saveFolders();
-                                createFolderOverlay.visible = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Folder context menu (right-click on tile) ───────────────────────
-        Menu {
-            id: folderContextMenu
-            property int targetIndex: -1
-
-            MenuItem {
-                text: i18n("Rename folder")
-                icon.name: "edit-rename"
-                onTriggered: {
-                    var idx = folderContextMenu.targetIndex;
-                    if (idx < 0 || idx >= rootItem.pinnedFoldersData.length) return;
-                    folderRenameField.text = rootItem.pinnedFoldersData[idx].name;
-                    folderRenameOverlay.targetIndex = idx;
-                    folderRenameOverlay.visible = true;
-                    folderRenameField.forceActiveFocus();
-                    folderRenameField.selectAll();
-                }
-            }
-
-            MenuItem {
-                text: i18n("Delete folder")
-                icon.name: "delete"
-                onTriggered: {
-                    var folders = rootItem.pinnedFoldersData.slice();
-                    folders.splice(folderContextMenu.targetIndex, 1);
-                    rootItem.pinnedFoldersData = folders;
-                    rootItem.saveFolders();
-                }
-            }
-
-            MenuItem {
-                text: i18n("Unpin all apps in folder")
-                icon.name: "bookmark-remove"
-                onTriggered: {
-                    if (folderContextMenu.targetIndex < 0) return;
-                    var folder = rootItem.pinnedFoldersData[folderContextMenu.targetIndex];
-                    if (!folder) return;
-                    folder.items.forEach(function(id) {
-                        if (globalFavorites.isFavorite(id))
-                            globalFavorites.removeFavorite(id);
-                    });
-                    var folders = rootItem.pinnedFoldersData.slice();
-                    folders.splice(folderContextMenu.targetIndex, 1);
-                    rootItem.pinnedFoldersData = folders;
-                    rootItem.saveFolders();
-                }
-            }
-        }
-
-        // ── Folder rename overlay ────────────────────────────────────────────
-        Item {
-            id: folderRenameOverlay
-            anchors.fill: parent
-            visible: false
-            z: 202
-
-            property int targetIndex: -1
-
-            Rectangle {
-                anchors.fill: parent
-                color: "black"
-                opacity: 0.45
-                MouseArea { anchors.fill: parent; onClicked: folderRenameOverlay.visible = false }
-            }
-
-            Rectangle {
-                width: Math.min(300, rootItem.width - Kirigami.Units.largeSpacing * 4)
-                height: renameDialogCol.implicitHeight + Kirigami.Units.largeSpacing * 2
-                anchors.centerIn: parent
-                radius: Kirigami.Units.smallSpacing * 2
-                color: Kirigami.Theme.backgroundColor
-                border.width: 1
-                border.color: root.colorWithAlpha(Kirigami.Theme.textColor, 0.15)
-
-                Column {
-                    id: renameDialogCol
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: Kirigami.Units.largeSpacing
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Text {
-                        text: i18n("Rename Folder")
-                        color: Kirigami.Theme.textColor
-                        font.bold: true
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.05
-                    }
-
-                    PC3.TextField {
-                        id: folderRenameField
-                        width: parent.width
-                        Keys.onReturnPressed: renameSaveBtn.clicked()
-                        Keys.onEscapePressed: folderRenameOverlay.visible = false
-                    }
-
-                    RowLayout {
-                        width: parent.width
-                        Item { Layout.fillWidth: true }
-                        PC3.Button {
-                            text: i18n("Cancel")
-                            onClicked: folderRenameOverlay.visible = false
-                        }
-                        PC3.Button {
-                            id: renameSaveBtn
-                            text: i18n("Save")
-                            highlighted: true
-                            enabled: folderRenameField.text.trim().length > 0
-                            onClicked: {
-                                var folders = rootItem.pinnedFoldersData.slice();
-                                if (folderRenameOverlay.targetIndex >= 0 && folderRenameOverlay.targetIndex < folders.length) {
-                                    folders[folderRenameOverlay.targetIndex] = {
-                                        name: folderRenameField.text.trim(),
-                                        items: folders[folderRenameOverlay.targetIndex].items
-                                    };
-                                    rootItem.pinnedFoldersData = folders;
-                                    rootItem.saveFolders();
-                                }
-                                folderRenameOverlay.visible = false;
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -3160,11 +2457,9 @@ PlasmaCore.Dialog {
                 if (digit >= 0 && digit <= 8) {
                     var perPage = Plasmoid.configuration.numberColumns * Plasmoid.configuration.numberRows;
                     var appIdx = rootItem.pinnedCurrentPage * perPage + digit;
-                    if (appIdx < globalFavorites.count) {
+                    if (view.currentIndex === 0 && appIdx < globalFavoritesGrid.count) {
                         event.accepted = true;
-                        rootItem.recordLaunch(globalFavorites.favorites[appIdx]);
-                        globalFavorites.trigger(appIdx, "", null);
-                        root.toggle();
+                        globalFavoritesGrid.activate(appIdx);
                     }
                     return;
                 }
@@ -3232,15 +2527,12 @@ PlasmaCore.Dialog {
 
     function setModels() {
         globalFavoritesGrid.model = globalFavorites;
-        // Row order: [RecentApps(0), RecentDocs(1 if enabled), AllApps(1 or 2)]
+        // Documents are disabled: [RecentApps(0), AllApps(1)].
         recentAppsListView.model = rootModel.modelForRow(0);
-        var allAppsRow = Plasmoid.configuration.showRecentDocs ? 2 : 1;
+        var allAppsRow = 1;
         sortedAppsModel.sourceModel = rootModel.modelForRow(allAppsRow);
         allAppsGrid.model = allAppsComboModel;
         rootItem.buildAllAppsCombo();
-        if (Plasmoid.configuration.showRecentDocs) {
-            documentsGrid.model = rootModel.modelForRow(1);
-        }
     }
 
     property bool categoryModelLoaded: false

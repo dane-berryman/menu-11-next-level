@@ -55,11 +55,14 @@ KCM.SimpleKCM {
     property alias cfg_labels2lines: labels2lines.checked
 
     property alias cfg_appsIconSize: appsIconSize.currentIndex
-    property alias cfg_docsIconSize: docsIconSize.currentIndex
     property alias cfg_displayPosition: displayPosition.currentIndex
     property alias cfg_allAppsViewMode: allAppsViewMode.currentIndex
     property alias cfg_allAppsSortMode: allAppsSortMode.currentIndex
-    property alias cfg_showRecentDocs: showRecentDocsCb.checked
+    property alias cfg_pinnedSortMode: pinnedSortMode.currentIndex
+    property alias cfg_profilePictureSize: profilePictureSize.value
+    property alias cfg_showIpAddress: showIpAddress.checked
+    property alias cfg_showDiskSpace: showDiskSpace.checked
+    property alias cfg_showRamUsage: showRamUsage.checked
     property alias cfg_showRecentApps: showRecentAppsCb.checked
     property alias cfg_enableShellRunner: enableShellRunnerCb.checked
     property alias cfg_showQuickActions: showQuickActionsCb.checked
@@ -185,14 +188,6 @@ KCM.SimpleKCM {
         }
 
         ComboBox {
-            id: docsIconSize
-            Kirigami.FormData.label: i18n("Docs icon size:")
-            Layout.fillWidth: true
-            model: [i18n("Small"),i18n("Medium"),i18n("Large"), i18n("Huge")]
-        }
-
-
-        ComboBox {
 
             Kirigami.FormData.label: i18n("Menu position")
             id: displayPosition
@@ -227,15 +222,32 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Number of rows")
         }
 
+        ComboBox {
+            id: pinnedSortMode
+            Kirigami.FormData.label: i18n("Favourites sort order:")
+            model: [i18n("Manual (drag to reorder)"), i18n("A → Z"), i18n("By type (folders first, then A → Z)"), i18n("Folders last, then A → Z")]
+            Layout.fillWidth: true
+        }
+
+        SpinBox {
+            id: profilePictureSize
+            Kirigami.FormData.label: i18n("Profile picture size (px):")
+            from: 24
+            to: 96
+            stepSize: 8
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+            Kirigami.FormData.label: i18n("System information")
+        }
+        CheckBox { id: showIpAddress; text: i18n("Show local IP address") }
+        CheckBox { id: showDiskSpace; text: i18n("Show disk space (home filesystem)") }
+        CheckBox { id: showRamUsage; text: i18n("Show RAM usage") }
+
         Item {
             Kirigami.FormData.isSection: true
             Kirigami.FormData.label: i18n("All Apps")
-        }
-
-        CheckBox {
-            id: showRecentDocsCb
-            Kirigami.FormData.label: i18n("Recent Documents:")
-            text: i18n("Show Recent Documents section")
         }
 
         ComboBox {
@@ -401,7 +413,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.3")
+                text: i18n("Version: 1.4.1")
                 Layout.fillWidth: true
             }
 
@@ -412,10 +424,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.3", function(result) {
+                    UpdateChecker.checkForUpdates("1.4.1", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.3");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.4.1");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

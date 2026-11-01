@@ -101,7 +101,7 @@
     </entry>
 
     <entry name="showRecentDocs" type="Bool">
-      <default>true</default>
+      <default>false</default>
     </entry>
 
     <entry name="showRecentApps" type="Bool">
@@ -120,6 +120,16 @@
     </entry>
     <entry name="showShutdownButton" type="Bool">
       <default>true</default>
+    </entry>
+
+    <entry name="pinnedSortMode" type="Int"><default>0</default></entry>
+    <entry name="profilePictureSize" type="Int"><default>40</default></entry>
+    <entry name="showIpAddress" type="Bool"><default>true</default></entry>
+    <entry name="showDiskSpace" type="Bool"><default>true</default></entry>
+    <entry name="showRamUsage" type="Bool"><default>true</default></entry>
+
+    <entry name="pinnedOrder" type="String">
+      <default>[]</default>
     </entry>
 
     <entry name="pinnedFolders" type="String">

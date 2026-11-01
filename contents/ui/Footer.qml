@@ -47,22 +47,11 @@ RowLayout{
             id: userInfoRow
             anchors.fill: parent
 
-            Image {
-                id: iconUser
-                source: {
-                    var faceUrl = kuser.faceIconUrl.toString()
-                    if (faceUrl !== "") {
-                        return faceUrl
-                    }
-                    return "file://usr/share/icons/breeze/apps/48/kuser.svg"
-                }
-                cache: false
-                visible: source !== ""
-                sourceSize.height: parent.height * 0.7
-                sourceSize.width: parent.height * 0.7
-                fillMode: Image.PreserveAspectFit
+            RoundAvatar {
+                source: kuser.faceIconUrl
+                Layout.preferredWidth: Math.max(24, Math.min(96, Plasmoid.configuration.profilePictureSize))
+                Layout.preferredHeight: Layout.preferredWidth
                 Layout.alignment: Qt.AlignVCenter
-                layer.enabled: true
             }
 
             PlasmaExtras.Heading {
@@ -77,7 +66,10 @@ RowLayout{
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: Qt.openUrlExternally("file:///usr/share/applications/kcm_users.desktop")
+            onClicked: {
+                executable.exec("systemsettings kcm_users");
+                root.visible = false;
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 .pragma library
 
-var updateCheckUrl = "https://api.github.com/repos/Eisteed/menu-11-next/releases/latest";
+var updateCheckUrl = "https://api.github.com/repos/dane-berryman/menu-11-next-level/releases/latest";
 
 function parseVersion(versionString) {
     // Remove 'v' prefix if present (v1.3.0 -> 1.3.0)

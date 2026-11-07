@@ -92,6 +92,13 @@
     <default>true</default>
     </entry>
 
+    <entry name="highlightNewApps" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="newAppsState" type="String">
+      <default></default>
+    </entry>
+
     <entry name="allAppsViewMode" type="Int">
       <default>0</default>
     </entry>

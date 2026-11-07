@@ -56,6 +56,7 @@ KCM.SimpleKCM {
 
     property alias cfg_appsIconSize: appsIconSize.currentIndex
     property alias cfg_displayPosition: displayPosition.currentIndex
+    property alias cfg_highlightNewApps: highlightNewApps.checked
     property alias cfg_allAppsViewMode: allAppsViewMode.currentIndex
     property alias cfg_allAppsSortMode: allAppsSortMode.currentIndex
     property alias cfg_pinnedSortMode: pinnedSortMode.currentIndex
@@ -250,6 +251,11 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("All Apps")
         }
 
+        CheckBox {
+            id: highlightNewApps
+            text: i18n("Highlight newly installed apps")
+        }
+
         ComboBox {
             id: allAppsViewMode
             Kirigami.FormData.label: i18n("Default view mode:")
@@ -413,7 +419,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.4.1")
+                text: i18n("Version: 1.5.0")
                 Layout.fillWidth: true
             }
 
@@ -424,10 +430,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.4.1", function(result) {
+                    UpdateChecker.checkForUpdates("1.5.0", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.4.1");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.5.0");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

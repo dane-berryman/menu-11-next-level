@@ -19,6 +19,7 @@ Screenshots captured from the app running on Fedora KDE.
 - Launch apps from your favourites, folders, search results, or the All Apps page.
 - Organise favourites into folders by dragging one app onto another.
 - Sort favourites manually, A–Z, folders first, or folders last.
+- Highlight newly installed apps in All Apps, with an optional New badge.
 - Browse All Apps in list, grid, or category view, with its own sorting and folders.
 - Adjust the app icon size, grid rows and columns, launcher button image, and menu position.
 - Show a circular profile picture with an adjustable size. Click the profile area to open **System Settings → Users**.
@@ -98,6 +99,14 @@ Right-click the launcher and open **Configure → General**.
 - **Folders last:** apps first, then folders; each group is sorted A–Z.
 
 Dropping between tiles switches back to manual ordering.
+
+### Newly installed apps
+
+Enable or disable **Highlight newly installed apps** under the All Apps settings.
+Apps added after the first scan get a subtle highlight and a **New** badge. The badge
+clears when you launch the app through this launcher, or after seven days.
+Existing apps are not marked on the initial scan. Detection is saved between sessions;
+turning the setting off hides highlights without changing the app list.
 
 ### Profile and system information
 

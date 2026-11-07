@@ -15,7 +15,7 @@
         "Id": "menu.11.next.level",
         "License": "GPL-2.0+",
         "Name": "Menu 11 Next Level",
-        "Version": "1.4.1",
+        "Version": "1.5.0",
         "Website": "https://github.com/dane-berryman/menu-11-next-level"
     },
     "X-Plasma-API-Minimum-Version": "6.0",

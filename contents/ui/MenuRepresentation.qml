@@ -34,6 +34,7 @@ import org.kde.kitemmodels 1.0 as KItemModels
 import org.kde.coreaddons 1.0 as KCoreAddons
 import "." as CustomUI
 import "code/UpdateChecker.js" as UpdateChecker
+import "code/NewApps.js" as NewApps
 
 PlasmaCore.Dialog {
     id: root
@@ -88,6 +89,7 @@ PlasmaCore.Dialog {
             x = pos.x;
             y = pos.y;
             reset();
+            newAppsRefresh.restart();
             rootItem.loadFolders();
             rootItem.loadAllAppsFolders();
             rootItem.loadLaunchCounts();
@@ -99,7 +101,7 @@ PlasmaCore.Dialog {
             }
             // Trigger periodic background update check (throttled to once per 24 hours)
             if (UpdateChecker.shouldCheckForUpdates(Plasmoid.configuration)) {
-                UpdateChecker.checkForUpdates("1.4.1", function(result) {
+                UpdateChecker.checkForUpdates("1.6.0", function(result) {
                     if (result.success) {
                         UpdateChecker.recordLastCheckTime(Plasmoid.configuration);
                         if (result.updateAvailable) {
@@ -305,6 +307,51 @@ PlasmaCore.Dialog {
             folderAppPickerPopup.openForFolder(folderIdx, px, py)
         }
 
+        property var newAppState: NewApps.parse(Plasmoid.configuration.newAppsState)
+
+        function saveNewAppState(state) {
+            newAppState = state;
+            var raw = JSON.stringify(state);
+            if (Plasmoid.configuration.newAppsState !== raw) Plasmoid.configuration.newAppsState = raw;
+        }
+
+        function scanNewApps() {
+            if (!sortedAppsModel.sourceModel) return;
+            var ids = [];
+            for (var i = 0; i < sortedAppsModel.rowCount(); i++) {
+                var id = sortedAppsModel.data(sortedAppsModel.index(i, 0), kickerFavoriteIdRole);
+                if (id) ids.push(String(id));
+            }
+            saveNewAppState(NewApps.scan(newAppState, ids, Date.now()));
+        }
+
+        function isNewApp(id) {
+            return view.currentIndex === 1 && Plasmoid.configuration.highlightNewApps && NewApps.isNew(newAppState, id, Date.now());
+        }
+
+        Timer {
+            id: newAppsRefresh
+            interval: 300
+            onTriggered: {
+                rootItem.scanNewApps();
+                rootItem.buildAllAppsCombo();
+            }
+        }
+        Timer {
+            interval: 60000
+            repeat: true
+            running: root.visible
+            onTriggered: rootItem.scanNewApps()
+        }
+        Connections {
+            target: sortedAppsModel
+            function onModelReset() { newAppsRefresh.restart(); }
+            function onRowsInserted() { newAppsRefresh.restart(); }
+            function onRowsRemoved() { newAppsRefresh.restart(); }
+            function onDataChanged() { newAppsRefresh.restart(); }
+            function onLayoutChanged() { newAppsRefresh.restart(); }
+        }
+
         // ── All Apps combo model helpers ─────────────────────────────────────
         // Kicker role IDs (from plasma-workspace/applets/kicker/actionlist.h)
         readonly property int kickerDisplayRole:     Qt.DisplayRole          // 0
@@ -489,6 +536,9 @@ PlasmaCore.Dialog {
 
         function recordLaunch(appId) {
             if (!appId || appId === "") return;
+            if (NewApps.isNew(newAppState, appId, Date.now())) {
+                saveNewAppState(NewApps.launched(newAppState, appId));
+            }
             var updated = JSON.parse(JSON.stringify(launchCounts));
             var bucket = currentBucket();
             var prev = updated[appId];
@@ -1149,6 +1199,8 @@ PlasmaCore.Dialog {
                     showIpAddress: Plasmoid.configuration.showIpAddress
                     showDiskSpace: Plasmoid.configuration.showDiskSpace
                     showRamUsage: Plasmoid.configuration.showRamUsage
+                    showCpuUsage: Plasmoid.configuration.showCpuUsage
+                    showGpuUsage: Plasmoid.configuration.showGpuUsage
                 }
             }
             // PAGE 2
@@ -2533,6 +2585,7 @@ PlasmaCore.Dialog {
         sortedAppsModel.sourceModel = rootModel.modelForRow(allAppsRow);
         allAppsGrid.model = allAppsComboModel;
         rootItem.buildAllAppsCombo();
+        newAppsRefresh.restart();
     }
 
     property bool categoryModelLoaded: false

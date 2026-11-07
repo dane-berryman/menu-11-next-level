@@ -4,7 +4,7 @@ import json
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 spec = importlib.util.spec_from_file_location('system_info', Path(__file__).parents[1] / 'contents/ui/code/system_info.py')
 system_info = importlib.util.module_from_spec(spec)
@@ -25,6 +25,26 @@ class SystemInfoTest(unittest.TestCase):
     def test_disconnected_network(self):
         with patch.object(system_info.subprocess, 'run', side_effect=OSError('offline')):
             self.assertIsNone(system_info.local_ip())
+
+    def test_cpu_percentage_and_guest_accounting(self):
+        self.assertEqual(system_info.cpu_counters('cpu 10 0 10 60 20 0 0 0 999 999'), (100, 80))
+        self.assertEqual(system_info.cpu_usage((100, 80), (200, 130)), 50.0)
+        self.assertIsNone(system_info.cpu_usage((100, 80), (100, 80)))
+
+    def test_gpu_zero_is_valid(self):
+        counter = Mock()
+        counter.read_text.return_value = '0'
+        with patch.object(system_info.Path, 'glob', return_value=[counter]):
+            self.assertEqual(system_info.gpu_percent(), 0)
+
+    def test_gpu_unavailable_is_not_reported_as_zero(self):
+        with patch.object(system_info.Path, 'glob', return_value=[]), patch.object(system_info.shutil, 'which', return_value=None):
+            self.assertIsNone(system_info.gpu_percent())
+
+    def test_nvidia_gpu_fallback(self):
+        result = subprocess.CompletedProcess([], 0, '12\n34\n')
+        with patch.object(system_info.Path, 'glob', return_value=[]), patch.object(system_info.shutil, 'which', return_value='/usr/bin/nvidia-smi'), patch.object(system_info.subprocess, 'run', return_value=result):
+            self.assertEqual(system_info.gpu_percent(), 34)
 
 
 if __name__ == '__main__':

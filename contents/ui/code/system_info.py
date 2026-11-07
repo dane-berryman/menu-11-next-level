@@ -3,6 +3,7 @@
 import json
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -32,8 +33,55 @@ def local_ip():
     return None
 
 
+def cpu_counters(text):
+    values = [int(value) for value in text.splitlines()[0].split()[1:9]]
+    return sum(values), values[3] + values[4]
+
+
+def cpu_usage(before, after):
+    total = after[0] - before[0]
+    idle = after[1] - before[1]
+    if total <= 0:
+        return None
+    return round(max(0, min(100, 100 * (total - idle) / total)), 1)
+
+
+def cpu_percent():
+    try:
+        before = cpu_counters(Path('/proc/stat').read_text())
+        time.sleep(0.2)
+        return cpu_usage(before, cpu_counters(Path('/proc/stat').read_text()))
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def gpu_percent():
+    # AMD and other drivers exposing the standard DRM busy counter.
+    readings = []
+    for counter in Path('/sys/class/drm').glob('card[0-9]*/device/gpu_busy_percent'):
+        try:
+            value = float(counter.read_text().strip())
+            if 0 <= value <= 100:
+                readings.append(value)
+        except (OSError, ValueError):
+            pass
+    if readings:
+        return round(max(readings), 1)
+    if shutil.which('nvidia-smi'):
+        try:
+            result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu',
+                                     '--format=csv,noheader,nounits'], capture_output=True,
+                                    text=True, check=True, timeout=2)
+            readings = [float(line.strip()) for line in result.stdout.splitlines()]
+            readings = [value for value in readings if 0 <= value <= 100]
+            return round(max(readings), 1) if readings else None
+        except (OSError, subprocess.SubprocessError, ValueError):
+            pass
+    return None
+
+
 def collect():
-    result = {'ip': local_ip(), 'disk': None, 'ram': None}
+    result = {'ip': local_ip(), 'disk': None, 'ram': None, 'cpu': cpu_percent(), 'gpu': gpu_percent()}
     try:
         disk = shutil.disk_usage(Path.home())
         result['disk'] = {'total': disk.total, 'free': disk.free}

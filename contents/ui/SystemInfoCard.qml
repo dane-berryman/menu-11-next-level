@@ -11,8 +11,10 @@ Rectangle {
     property bool showIpAddress: true
     property bool showDiskSpace: true
     property bool showRamUsage: true
+    property bool showCpuUsage: true
+    property bool showGpuUsage: true
     property var stats: ({})
-    visible: showIpAddress || showDiskSpace || showRamUsage
+    visible: showIpAddress || showDiskSpace || showRamUsage || showCpuUsage || showGpuUsage
     height: visible ? content.implicitHeight + 24 : 0
     radius: 10
     color: Qt.alpha(Kirigami.Theme.textColor, 0.05)
@@ -59,20 +61,44 @@ Rectangle {
             text: qsTr("Local IP: %1").arg(card.stats.ip || qsTr("Not connected"))
             elide: Text.ElideMiddle
         }
+        RowLayout {
+            Layout.fillWidth: true
+            visible: card.showCpuUsage || card.showGpuUsage || card.showRamUsage
+            spacing: 12
+            PC3.Label {
+                visible: card.showCpuUsage
+                Layout.fillWidth: true
+                text: typeof card.stats.cpu === "number" ? qsTr("CPU %1%").arg(Math.round(card.stats.cpu)) : qsTr("CPU —")
+                elide: Text.ElideRight
+            }
+            PC3.Label {
+                visible: card.showGpuUsage
+                Layout.fillWidth: true
+                text: typeof card.stats.gpu === "number" ? qsTr("GPU %1%").arg(Math.round(card.stats.gpu)) : qsTr("GPU —")
+                elide: Text.ElideRight
+            }
+            PC3.Label {
+                id: ramLabel
+                visible: card.showRamUsage
+                Layout.fillWidth: true
+                text: card.stats.ram && card.stats.ram.total > 0
+                    ? qsTr("RAM %1%").arg(Math.round(card.stats.ram.used * 100 / card.stats.ram.total))
+                    : qsTr("RAM —")
+                readonly property string details: card.stats.ram && card.stats.ram.total > 0
+                    ? qsTr("RAM: %1 used of %2").arg(card.size(card.stats.ram.used)).arg(card.size(card.stats.ram.total))
+                    : qsTr("RAM: unavailable")
+                Accessible.name: text + ", " + details
+                PC3.ToolTip.text: details
+                PC3.ToolTip.visible: ramHover.containsMouse
+                elide: Text.ElideRight
+                MouseArea { id: ramHover; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
+            }
+        }
         PC3.Label {
             visible: card.showDiskSpace
             Layout.fillWidth: true
             text: card.stats.disk ? qsTr("Disk: %1 free of %2").arg(card.size(card.stats.disk.free)).arg(card.size(card.stats.disk.total))
                                   : qsTr("Disk: unavailable")
-            elide: Text.ElideRight
-        }
-        PC3.Label {
-            visible: card.showRamUsage
-            Layout.fillWidth: true
-            text: card.stats.ram && card.stats.ram.total > 0
-                ? qsTr("RAM: %1 of %2 (%3%)").arg(card.size(card.stats.ram.used)).arg(card.size(card.stats.ram.total))
-                      .arg(Math.round(card.stats.ram.used * 100 / card.stats.ram.total))
-                : qsTr("RAM: unavailable")
             elide: Text.ElideRight
         }
     }

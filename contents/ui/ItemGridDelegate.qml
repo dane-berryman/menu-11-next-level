@@ -30,6 +30,8 @@ Item {
     property variant icon: model.decoration !== undefined ? model.decoration : ""
     property var m: model
     property bool isFolderItem: model.itemType === "folder"
+    property bool newlyInstalled: !isFolderItem && typeof rootItem !== "undefined"
+        && rootItem.isNewApp(favoriteId)
     property bool isIndented:   model.indented === true
 
     property bool hasActionList: {
@@ -41,7 +43,7 @@ Item {
     property int itemColumns
     property bool labels2lines: false
     Accessible.role: Accessible.MenuItem
-    Accessible.name: model.display
+    Accessible.name: newlyInstalled ? model.display + ", " + qsTr("Newly installed") : model.display
 
     function openActionMenu(x, y) {
         if (isFolderItem) {
@@ -62,6 +64,24 @@ Item {
             root.toggle();
         }
     }
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        radius: 6
+        visible: item.newlyInstalled
+        color: Qt.alpha(Kirigami.Theme.highlightColor, 0.12)
+        border.color: Qt.alpha(Kirigami.Theme.highlightColor, 0.5)
+        border.width: 1
+        z: -1
+    }
+    NewAppBadge {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: 4
+        visible: item.newlyInstalled
+        z: 4
+    }
+
     // Left indent for expanded folder children
     property real indentOffset: isIndented ? Kirigami.Units.gridUnit * 1.5 : 0
 

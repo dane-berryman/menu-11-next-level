@@ -38,41 +38,17 @@ RowLayout{
         id: sessionManager
     }
 
-    Item {
-        implicitWidth: userInfoRow.implicitWidth
-        implicitHeight: userInfoRow.implicitHeight
-        Layout.alignment: Qt.AlignVCenter
-
-        RowLayout {
-            id: userInfoRow
-            anchors.fill: parent
-
-            RoundAvatar {
-                source: kuser.faceIconUrl
-                Layout.preferredWidth: Math.max(24, Math.min(96, Plasmoid.configuration.profilePictureSize))
-                Layout.preferredHeight: Layout.preferredWidth
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            PlasmaExtras.Heading {
-                wrapMode: Text.NoWrap
-                color: Kirigami.Theme.textColor
-                level: 3
-                font.bold: true
-                text: qsTr(kuser.fullName)
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                executable.exec("systemsettings kcm_users");
-                root.visible = false;
-            }
+    PlasmaComponents3.ToolButton {
+        Accessible.name: qsTr("User settings")
+        Layout.preferredWidth: Math.max(24, Math.min(96, Plasmoid.configuration.profilePictureSize))
+        Layout.preferredHeight: Layout.preferredWidth
+        padding: 0
+        contentItem: RoundAvatar { source: kuser.faceIconUrl }
+        onClicked: {
+            executable.exec("systemsettings kcm_users");
+            root.visible = false;
         }
     }
-
 
     PlasmaComponents3.ToolButton {
         MouseArea {
@@ -113,73 +89,8 @@ RowLayout{
 
 
 
-    PlasmaComponents3.ToolButton {
-            MouseArea {
-                cursorShape: Qt.PointingHandCursor
-                anchors.fill: parent
-                onClicked: sessionManager.requestLogout()  
-                }
-        icon.width: 24
-        icon.height: 24
-        icon.name: "system-lock-screen"
-        
-        Layout.rightMargin: 10
-        PlasmaComponents3.ToolTip.delay: 1000
-        PlasmaComponents3.ToolTip.timeout: 1000
-        PlasmaComponents3.ToolTip.visible: hovered
-        PlasmaComponents3.ToolTip.text: i18n("Logout")
-        visible: sessionManager.canLock
+    PowerButton {
+        session: sessionManager
+        onActionRequested: root.visible = false
     }
-    
-    PlasmaComponents3.ToolButton {
-            MouseArea {
-                cursorShape: Qt.PointingHandCursor
-                anchors.fill: parent
-                onClicked: sessionManager.suspend()
-                }
-        icon.width: 24
-        icon.height: 24
-        icon.name:  "system-suspend"
-        Layout.rightMargin: 10
-        PlasmaComponents3.ToolTip.delay: 1000
-        PlasmaComponents3.ToolTip.timeout: 1000
-        PlasmaComponents3.ToolTip.visible: hovered
-        PlasmaComponents3.ToolTip.text: i18n("Sleep")
-        visible: sessionManager.canSuspend && Plasmoid.configuration.showSleepButton
-    }
-
-    PlasmaComponents3.ToolButton {
-            MouseArea {
-                cursorShape: Qt.PointingHandCursor
-                anchors.fill: parent
-                onClicked: sessionManager.requestReboot()
-                }
-        icon.width: 24
-        icon.height: 24
-        icon.name:  "system-reboot"
-        Layout.rightMargin: 10
-        PlasmaComponents3.ToolTip.delay: 1000
-        PlasmaComponents3.ToolTip.timeout: 1000
-        PlasmaComponents3.ToolTip.visible: hovered
-        PlasmaComponents3.ToolTip.text: i18n("Restart")
-        visible: sessionManager.canReboot && Plasmoid.configuration.showRestartButton
-    }
-    PlasmaComponents3.ToolButton {
-            MouseArea {
-                cursorShape: Qt.PointingHandCursor
-                anchors.fill: parent
-                onClicked: sessionManager.requestShutdown()
-                }
-        icon.width: 24
-        icon.height: 24
-        icon.name:  "system-shutdown"
-        Layout.rightMargin: 10
-        PlasmaComponents3.ToolTip.delay: 1000
-        PlasmaComponents3.ToolTip.timeout: 1000
-        PlasmaComponents3.ToolTip.visible: hovered
-        PlasmaComponents3.ToolTip.text: i18n("Shutdown")
-        visible: sessionManager.canShutdown && Plasmoid.configuration.showShutdownButton
-    }
-
-    
 }

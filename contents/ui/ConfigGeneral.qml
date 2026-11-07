@@ -56,19 +56,19 @@ KCM.SimpleKCM {
 
     property alias cfg_appsIconSize: appsIconSize.currentIndex
     property alias cfg_displayPosition: displayPosition.currentIndex
+    property alias cfg_highlightNewApps: highlightNewApps.checked
     property alias cfg_allAppsViewMode: allAppsViewMode.currentIndex
     property alias cfg_allAppsSortMode: allAppsSortMode.currentIndex
     property alias cfg_pinnedSortMode: pinnedSortMode.currentIndex
     property alias cfg_profilePictureSize: profilePictureSize.value
     property alias cfg_showIpAddress: showIpAddress.checked
     property alias cfg_showDiskSpace: showDiskSpace.checked
+    property alias cfg_showCpuUsage: showCpuUsage.checked
+    property alias cfg_showGpuUsage: showGpuUsage.checked
     property alias cfg_showRamUsage: showRamUsage.checked
     property alias cfg_showRecentApps: showRecentAppsCb.checked
     property alias cfg_enableShellRunner: enableShellRunnerCb.checked
     property alias cfg_showQuickActions: showQuickActionsCb.checked
-    property alias cfg_showSleepButton: showSleepCb.checked
-    property alias cfg_showRestartButton: showRestartCb.checked
-    property alias cfg_showShutdownButton: showShutdownCb.checked
     property alias cfg_showWeather: showWeatherCb.checked
     property alias cfg_weatherLocation: weatherLocationCombo.currentIndex
     property alias cfg_weatherLatitude: weatherLatitudeField.value
@@ -243,11 +243,18 @@ KCM.SimpleKCM {
         }
         CheckBox { id: showIpAddress; text: i18n("Show local IP address") }
         CheckBox { id: showDiskSpace; text: i18n("Show disk space (home filesystem)") }
+        CheckBox { id: showCpuUsage; text: i18n("Show CPU usage") }
+        CheckBox { id: showGpuUsage; text: i18n("Show GPU usage") }
         CheckBox { id: showRamUsage; text: i18n("Show RAM usage") }
 
         Item {
             Kirigami.FormData.isSection: true
             Kirigami.FormData.label: i18n("All Apps")
+        }
+
+        CheckBox {
+            id: highlightNewApps
+            text: i18n("Highlight newly installed apps")
         }
 
         ComboBox {
@@ -368,27 +375,6 @@ KCM.SimpleKCM {
             visible: weatherLocationCombo.currentIndex === weatherLocationCombo.model.length - 1
         }
 
-        Item {
-            Kirigami.FormData.isSection: true
-            Kirigami.FormData.label: i18n("Footer power buttons")
-        }
-
-        CheckBox {
-            id: showSleepCb
-            Kirigami.FormData.label: i18n("Show:")
-            text: i18n("Sleep / Suspend")
-        }
-
-        CheckBox {
-            id: showRestartCb
-            text: i18n("Restart")
-        }
-
-        CheckBox {
-            id: showShutdownCb
-            text: i18n("Shutdown")
-        }
-
         RowLayout{
 
             visible: false
@@ -413,7 +399,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.4.1")
+                text: i18n("Version: 1.6.0")
                 Layout.fillWidth: true
             }
 
@@ -424,10 +410,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.4.1", function(result) {
+                    UpdateChecker.checkForUpdates("1.6.0", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.4.1");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.6.0");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

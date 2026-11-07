@@ -133,6 +133,8 @@
     <entry name="profilePictureSize" type="Int"><default>40</default></entry>
     <entry name="showIpAddress" type="Bool"><default>true</default></entry>
     <entry name="showDiskSpace" type="Bool"><default>true</default></entry>
+    <entry name="showCpuUsage" type="Bool"><default>true</default></entry>
+    <entry name="showGpuUsage" type="Bool"><default>true</default></entry>
     <entry name="showRamUsage" type="Bool"><default>true</default></entry>
 
     <entry name="pinnedOrder" type="String">

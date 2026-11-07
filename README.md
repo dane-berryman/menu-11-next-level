@@ -22,8 +22,8 @@ Screenshots captured from the app running on Fedora KDE.
 - Highlight newly installed apps in All Apps, with an optional New badge.
 - Browse All Apps in list, grid, or category view, with its own sorting and folders.
 - Adjust the app icon size, grid rows and columns, launcher button image, and menu position.
-- Show a circular profile picture with an adjustable size. Click the profile area to open **System Settings → Users**.
-- Choose whether to show your local IP address, disk space, and RAM usage.
+- Show a circular profile picture with an adjustable size. Click the photo to open **System Settings → Users**.
+- Choose whether to show your local IP address, disk space, CPU, GPU, and RAM usage.
 - Optionally show recently opened apps, a quick actions bar, and weather.
 - Search for apps, use the command palette or calculator, and access session and power controls.
 
@@ -116,15 +116,26 @@ The system information switches are independent:
 
 - **Local IP:** the source address selected by the computer's routing table, rather than a public-IP lookup.
 - **Disk space:** free and total space on the filesystem containing your home folder.
-- **RAM:** used memory, total memory, and percentage used. Available memory is excluded from the used amount.
+- **CPU:** total processor usage, sampled over 0.2 seconds.
+- **GPU:** busy percentage from a supported DRM driver (including AMD), or NVIDIA's `nvidia-smi`. With multiple readings, the busiest GPU is shown. An em dash means the driver does not provide a reading.
+- **RAM:** percentage used; hover over the reading for used and total memory. Available memory is excluded from the used amount.
+
+CPU, GPU, and RAM share one row to keep the panel compact. Each reading has its own switch in settings.
 
 These readings refresh every **five seconds while the menu is open**. Collecting them makes no network requests. Weather and update checks are separate online features.
 
 ### Other options
 
-Settings also cover app icon size, grid dimensions, menu position, the launcher icon or image, All Apps view and sort order, recently opened apps, quick actions, weather location, the shell runner, and visible Sleep, Restart, and Shutdown buttons.
+Settings also cover app icon size, grid dimensions, menu position, the launcher icon or image, All Apps view and sort order, recently opened apps, quick actions, weather location, and the shell runner.
 
 Recent documents are not displayed.
+
+### Power and session controls
+
+One power button opens **Power Off**, **Restart**, **Suspend**, and **Log Out**.
+Opening the menu does not perform an action. Options unavailable in the current
+session are disabled. The footer shows the user photo without a username; clicking
+the photo opens **System Settings → Users**.
 
 ## Search and keyboard controls
 

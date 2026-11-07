@@ -101,7 +101,7 @@ PlasmaCore.Dialog {
             }
             // Trigger periodic background update check (throttled to once per 24 hours)
             if (UpdateChecker.shouldCheckForUpdates(Plasmoid.configuration)) {
-                UpdateChecker.checkForUpdates("1.5.0", function(result) {
+                UpdateChecker.checkForUpdates("1.6.0", function(result) {
                     if (result.success) {
                         UpdateChecker.recordLastCheckTime(Plasmoid.configuration);
                         if (result.updateAvailable) {
@@ -1199,6 +1199,8 @@ PlasmaCore.Dialog {
                     showIpAddress: Plasmoid.configuration.showIpAddress
                     showDiskSpace: Plasmoid.configuration.showDiskSpace
                     showRamUsage: Plasmoid.configuration.showRamUsage
+                    showCpuUsage: Plasmoid.configuration.showCpuUsage
+                    showGpuUsage: Plasmoid.configuration.showGpuUsage
                 }
             }
             // PAGE 2

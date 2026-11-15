@@ -10,6 +10,7 @@ RowLayout {
     // Keep these values in the same order as the settings selector.
     enum DisplayMode { IconAndText, IconOnly, TextOnly }
     property int displayMode: FavouriteShortcuts.IconAndText
+    property int shortcutCount: 4
     property int iconSize: Kirigami.Units.iconSizes.medium
     readonly property bool showIcon: displayMode !== FavouriteShortcuts.TextOnly
     readonly property bool showText: displayMode !== FavouriteShortcuts.IconOnly
@@ -24,7 +25,9 @@ RowLayout {
         { appId: "org.kde.dolphin.desktop", label: qsTr("Files"), icon: "system-file-manager" },
         { appId: "org.mozilla.firefox.desktop", label: qsTr("Web"), icon: "internet-web-browser" },
         { appId: "org.kde.konsole.desktop", label: qsTr("Terminal"), icon: "utilities-terminal" },
-        { appId: "systemsettings.desktop", label: qsTr("Settings"), icon: "preferences-system" }
+        { appId: "systemsettings.desktop", label: qsTr("Settings"), icon: "preferences-system" },
+        { appId: "org.kde.discover.desktop", label: qsTr("Software"), icon: "system-software-install" },
+        { appId: "org.kde.kwrite.desktop", label: qsTr("Text Editor"), icon: "accessories-text-editor" }
     ]
     readonly property var slots: {
         try {
@@ -55,7 +58,7 @@ RowLayout {
     }
 
     Repeater {
-        model: shortcuts.slots
+        model: shortcuts.slots.slice(0, Math.max(3, Math.min(shortcuts.shortcutCount, shortcuts.slots.length)))
         PC3.Button {
             id: shortcutButton
             required property int index

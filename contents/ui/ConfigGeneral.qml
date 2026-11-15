@@ -59,6 +59,7 @@ KCM.SimpleKCM {
     property alias cfg_highlightNewApps: highlightNewApps.checked
     property alias cfg_allAppsViewMode: allAppsViewMode.currentIndex
     property alias cfg_allAppsSortMode: allAppsSortMode.currentIndex
+    property alias cfg_favouriteShortcutCount: shortcutCount.value
     property alias cfg_favouriteShortcutDisplayMode: shortcutDisplayMode.currentIndex
     property alias cfg_favouriteShortcutIconSize: shortcutIconSize.value
     property alias cfg_pinnedSortMode: pinnedSortMode.currentIndex
@@ -229,6 +230,13 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Favourites sort order:")
             model: [i18n("Manual (drag to reorder)"), i18n("A → Z"), i18n("By type (folders first, then A → Z)"), i18n("Folders last, then A → Z")]
             Layout.fillWidth: true
+        }
+
+        SpinBox {
+            id: shortcutCount
+            Kirigami.FormData.label: i18n("Number of favourite shortcuts:")
+            from: 3
+            to: 6
         }
 
         ComboBox {
@@ -416,7 +424,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.7.1")
+                text: i18n("Version: 1.7.2")
                 Layout.fillWidth: true
             }
 
@@ -427,10 +435,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.7.1", function(result) {
+                    UpdateChecker.checkForUpdates("1.7.2", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.7.1");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.7.2");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

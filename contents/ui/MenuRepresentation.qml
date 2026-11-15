@@ -101,7 +101,7 @@ PlasmaCore.Dialog {
             }
             // Trigger periodic background update check (throttled to once per 24 hours)
             if (UpdateChecker.shouldCheckForUpdates(Plasmoid.configuration)) {
-                UpdateChecker.checkForUpdates("1.7.1", function(result) {
+                UpdateChecker.checkForUpdates("1.7.2", function(result) {
                     if (result.success) {
                         UpdateChecker.recordLastCheckTime(Plasmoid.configuration);
                         if (result.updateAvailable) {
@@ -971,6 +971,7 @@ PlasmaCore.Dialog {
                     width: parent.width
                     displayMode: Plasmoid.configuration.favouriteShortcutDisplayMode
                     iconSize: Plasmoid.configuration.favouriteShortcutIconSize
+                    shortcutCount: Plasmoid.configuration.favouriteShortcutCount
                     savedShortcuts: Plasmoid.configuration.favouriteShortcuts
                     onShortcutsSaved: json => Plasmoid.configuration.favouriteShortcuts = json
                     onEditRequested: {

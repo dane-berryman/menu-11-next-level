@@ -71,6 +71,10 @@ An existing widget may keep its loaded QML after an update. Log out and back in 
 kpackagetool6 --type Plasma/Applet --remove menu.11.next.level
 ```
 
+## Favourite shortcuts
+
+Four large shortcuts sit above the favourites grid. Click one to open its app, or right-click it to choose an installed application, enter a button name, and set a KDE theme icon by name. The editor previews the icon before you save.
+
 ## Using favourite folders
 
 | Action | How |

@@ -399,7 +399,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.6.0")
+                text: i18n("Version: 1.7.0")
                 Layout.fillWidth: true
             }
 
@@ -410,10 +410,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.6.0", function(result) {
+                    UpdateChecker.checkForUpdates("1.7.0", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.6.0");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.7.0");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

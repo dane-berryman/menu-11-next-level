@@ -59,6 +59,8 @@ KCM.SimpleKCM {
     property alias cfg_highlightNewApps: highlightNewApps.checked
     property alias cfg_allAppsViewMode: allAppsViewMode.currentIndex
     property alias cfg_allAppsSortMode: allAppsSortMode.currentIndex
+    property alias cfg_favouriteShortcutDisplayMode: shortcutDisplayMode.currentIndex
+    property alias cfg_favouriteShortcutIconSize: shortcutIconSize.value
     property alias cfg_pinnedSortMode: pinnedSortMode.currentIndex
     property alias cfg_profilePictureSize: profilePictureSize.value
     property alias cfg_showIpAddress: showIpAddress.checked
@@ -227,6 +229,21 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Favourites sort order:")
             model: [i18n("Manual (drag to reorder)"), i18n("A → Z"), i18n("By type (folders first, then A → Z)"), i18n("Folders last, then A → Z")]
             Layout.fillWidth: true
+        }
+
+        ComboBox {
+            id: shortcutDisplayMode
+            Kirigami.FormData.label: i18n("Favourite shortcut display:")
+            model: [i18n("Icon and text"), i18n("Icon only"), i18n("Text only")]
+            Layout.fillWidth: true
+        }
+
+        SpinBox {
+            id: shortcutIconSize
+            Kirigami.FormData.label: i18n("Favourite shortcut icon size (px):")
+            from: 16
+            to: 64
+            enabled: shortcutDisplayMode.currentIndex !== 2
         }
 
         SpinBox {
@@ -399,7 +416,7 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
 
             Text {
-                text: i18n("Version: 1.7.0")
+                text: i18n("Version: 1.7.1")
                 Layout.fillWidth: true
             }
 
@@ -410,10 +427,10 @@ KCM.SimpleKCM {
 
                 onClicked: {
                     checkUpdatesBtn.checking = true;
-                    UpdateChecker.checkForUpdates("1.7.0", function(result) {
+                    UpdateChecker.checkForUpdates("1.7.1", function(result) {
                         checkUpdatesBtn.checking = false;
 
-                        var status = UpdateChecker.formatUpdateStatus(result, "1.7.0");
+                        var status = UpdateChecker.formatUpdateStatus(result, "1.7.1");
                         showUpdateDialog(status.title, status.subtitle, result.releaseUrl);
                     });
                 }

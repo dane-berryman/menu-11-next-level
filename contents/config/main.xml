@@ -137,6 +137,8 @@
     <entry name="showGpuUsage" type="Bool"><default>true</default></entry>
     <entry name="showRamUsage" type="Bool"><default>true</default></entry>
 
+    <entry name="favouriteShortcutDisplayMode" type="Int"><default>0</default></entry>
+    <entry name="favouriteShortcutIconSize" type="Int"><default>32</default></entry>
     <entry name="favouriteShortcuts" type="String">
       <default>[]</default>
     </entry>

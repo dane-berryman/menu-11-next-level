@@ -73,7 +73,7 @@ kpackagetool6 --type Plasma/Applet --remove menu.11.next.level
 
 ## Favourite shortcuts
 
-Four large shortcuts sit above the favourites grid. Click one to open its app, or right-click it to choose an installed application, enter a button name, and set a KDE theme icon by name. The editor previews the icon before you save.
+Four large shortcuts sit above the favourites grid. Click one to open its app, or right-click it to choose an installed application, enter a button name, and set a KDE theme icon by name. The editor previews the icon before you save. In **Configure → General**, choose icon and text, icon only, or text only for all four shortcuts. Shortcut icons can be sized from 16 to 64 pixels.
 
 ## Using favourite folders
 

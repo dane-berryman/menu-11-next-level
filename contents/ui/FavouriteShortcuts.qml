@@ -7,6 +7,13 @@ import org.kde.plasma.components as PC3
 
 RowLayout {
     id: shortcuts
+    // Keep these values in the same order as the settings selector.
+    enum DisplayMode { IconAndText, IconOnly, TextOnly }
+    property int displayMode: FavouriteShortcuts.IconAndText
+    property int iconSize: Kirigami.Units.iconSizes.medium
+    readonly property bool showIcon: displayMode !== FavouriteShortcuts.TextOnly
+    readonly property bool showText: displayMode !== FavouriteShortcuts.IconOnly
+
     property string savedShortcuts
     property var applications: []
     signal editRequested()
@@ -56,9 +63,13 @@ RowLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: 1
             Layout.minimumWidth: 0
-            Layout.preferredHeight: Kirigami.Units.gridUnit * 3.5
+            Layout.preferredHeight: Math.max(Kirigami.Units.gridUnit * 3.5,
+                                             implicitContentHeight + topPadding + bottomPadding)
             text: modelData.label
             Accessible.name: text
+            PC3.ToolTip.text: text
+            PC3.ToolTip.visible: !shortcuts.showText && hovered
+            PC3.ToolTip.delay: 500
             background: Rectangle {
                 radius: Kirigami.Units.smallSpacing
                 color: Qt.alpha(Kirigami.Theme.highlightColor, shortcutButton.down ? 0.25
@@ -70,11 +81,13 @@ RowLayout {
                 spacing: Kirigami.Units.smallSpacing
                 Kirigami.Icon {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                    visible: shortcuts.showIcon
+                    Layout.preferredWidth: Math.min(shortcuts.iconSize, shortcutButton.availableWidth)
                     Layout.preferredHeight: Layout.preferredWidth
                     source: shortcutButton.modelData.icon || "application-x-executable"
                 }
                 PC3.Label {
+                    visible: shortcuts.showText
                     Layout.fillWidth: true
                     text: shortcutButton.text
                     horizontalAlignment: Text.AlignHCenter

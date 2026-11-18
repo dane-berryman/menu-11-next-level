@@ -101,7 +101,7 @@ PlasmaCore.Dialog {
             }
             // Trigger periodic background update check (throttled to once per 24 hours)
             if (UpdateChecker.shouldCheckForUpdates(Plasmoid.configuration)) {
-                UpdateChecker.checkForUpdates("1.6.0", function(result) {
+                UpdateChecker.checkForUpdates("1.7.2", function(result) {
                     if (result.success) {
                         UpdateChecker.recordLastCheckTime(Plasmoid.configuration);
                         if (result.updateAvailable) {
@@ -654,7 +654,8 @@ PlasmaCore.Dialog {
             function trigger(row, actionId, argument) {
                 var srcIdx = mapToSource(index(row, 0))
                 if (srcIdx.valid && sourceModel)
-                    sourceModel.trigger(srcIdx.row, actionId, argument)
+                    return sourceModel.trigger(srcIdx.row, actionId, argument)
+                return false
             }
 
             property var favoritesModel: sourceModel ? sourceModel.favoritesModel : null
@@ -961,6 +962,42 @@ PlasmaCore.Dialog {
                         buttonHeight: 25
                         onClicked: {
                             view.currentIndex = 1;
+                        }
+                    }
+                }
+
+                FavouriteShortcuts {
+                    id: favouriteShortcuts
+                    width: parent.width
+                    displayMode: Plasmoid.configuration.favouriteShortcutDisplayMode
+                    iconSize: Plasmoid.configuration.favouriteShortcutIconSize
+                    shortcutCount: Plasmoid.configuration.favouriteShortcutCount
+                    savedShortcuts: Plasmoid.configuration.favouriteShortcuts
+                    onShortcutsSaved: json => Plasmoid.configuration.favouriteShortcuts = json
+                    onEditRequested: {
+                        const apps = []
+                        for (let row = 0; row < sortedAppsModel.rowCount(); row++) {
+                            const index = sortedAppsModel.index(row, 0)
+                            const id = sortedAppsModel.data(index, rootItem.kickerFavoriteIdRole)
+                            if (!id) continue
+                            const label = sortedAppsModel.data(index, Qt.DisplayRole) || id
+                            const icon = sortedAppsModel.data(index, Qt.DecorationRole)
+                            apps.push({ id: id, label: label,
+                                        icon: typeof icon === "string" ? icon : rootItem.iconForId(id) })
+                        }
+                        applications = apps.sort((a, b) => a.label.localeCompare(b.label))
+                    }
+                    onLaunchRequested: appId => {
+                        for (let row = 0; row < sortedAppsModel.rowCount(); row++) {
+                            const id = sortedAppsModel.data(sortedAppsModel.index(row, 0),
+                                                            rootItem.kickerFavoriteIdRole)
+                            if (id === appId || (appId === "org.mozilla.firefox.desktop" && id === "firefox.desktop")) {
+                                if (sortedAppsModel.trigger(row, "", null)) {
+                                    rootItem.recordLaunch(id)
+                                    root.visible = false
+                                }
+                                return
+                            }
                         }
                     }
                 }
